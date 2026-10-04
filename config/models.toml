@@ -1,0 +1,40 @@
+# MemoryBox: every model is an open-weight model on this computer, served by Ollama.
+# No key, no account, $0. Swapping a model is an edit here.
+#
+# Gemma 4 sizes in the Ollama library: e2b, e4b, 26b (mixture of experts, ~4B active), 31b.
+#   8 GB laptop          -> gemma4:e2b everywhere (slow, works)
+#   16 GB laptop / Mac   -> gemma4:e4b (the default)
+#   24 GB+ Mac or GPU    -> gemma4:26b for looking: it reads faded handwriting noticeably better
+
+[settings]
+# Letters and certificates need plenty of pixels: small handwriting, postmarks, faint stamps.
+max_edge = 1600
+
+[stages.looking]          # the photo of one keepsake -> what it is, what is written on it, guesses
+primary = "gemma4-e4b"
+fallback = "gemma4-e2b"
+
+[stages.writing]          # the memory card text, and understanding a family member's correction
+primary = "gemma4-e4b"
+fallback = "gemma4-e2b"
+
+[models.gemma4-e4b]
+slug = "google/gemma-4-e4b"
+provider = "local"
+model_id = "gemma4:e4b"
+reasoning_effort = "none"
+num_ctx = 16384
+
+[models.gemma4-e2b]
+slug = "google/gemma-4-e2b"
+provider = "local"
+model_id = "gemma4:e2b"
+reasoning_effort = "none"
+num_ctx = 16384
+
+[models.gemma4-26b]
+slug = "google/gemma-4-26b-a4b"
+provider = "local"
+model_id = "gemma4:26b"
+reasoning_effort = "none"
+num_ctx = 16384
