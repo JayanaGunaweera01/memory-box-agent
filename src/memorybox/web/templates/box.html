@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% set page = 'box' %}
+{% block style %}
+  .add { display: grid; gap: 1rem; grid-template-columns: minmax(0, 1fr) auto; align-items: center; margin-bottom: 1.5rem; }
+  label.drop { display: block; border: 2px dashed #b9c3cd; border-radius: .4rem; padding: 1.4rem 1.2rem; cursor: pointer; background: #fff; }
+  label.drop:hover, label.drop.over { background: #f6faf8; border-color: var(--bottle); }
+  label.drop strong { display: block; font-size: 1.1rem; }
+  label.drop input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .box-progress { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .3rem .75rem; align-items: center;
+                  background: var(--card); padding: .9rem 1.1rem; margin: 0 0 1.5rem; max-width: 46rem; box-shadow: 0 4px 12px -8px rgba(30,42,51,.4); }
+  .box-progress strong { display: block; font: 600 1rem var(--sans); }
+  .box-progress .bar { grid-column: 1 / -1; height: 4px; background: var(--board-deep); border-radius: 2px; overflow: hidden; }
+  .box-progress .bar span { display: block; height: 100%; background: var(--bottle); transition: width .6s ease; }
+  .tools { display: flex; flex-wrap: wrap; gap: .75rem 1rem; align-items: center; margin: 0 0 1.25rem; }
+  .tools input[type=search] { max-width: 22rem; font-family: var(--sans); font-size: .95rem; }
+  .tools .count { font: .9rem var(--sans); color: var(--muted); margin-left: auto; }
+  .grid { display: grid; gap: 1.6rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); list-style: none; padding: 0; margin: 0; }
+  .tile { display: block; text-decoration: none; color: var(--ink); position: relative; }
+  .tile .ph { aspect-ratio: 4 / 5; background: var(--card); padding: .45rem; box-shadow: 0 6px 14px -8px rgba(30,42,51,.45); transition: transform .15s ease; }
+  .tile:hover .ph { transform: translateY(-2px) rotate(-.4deg); }
+  .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .tile.working img { opacity: .45; filter: grayscale(1); }
+  .tile .sides { position: absolute; top: .9rem; right: .9rem; font: 600 .72rem var(--sans); background: rgba(30,42,51,.78); color: #fff;
+                 padding: .15rem .45rem; border-radius: 1rem; }
+  /* The manila tag tied to each object, like a museum's. */
+  .tag { display: inline-block; margin: .55rem 0 0 .4rem; padding: .25rem .6rem .3rem 1rem; background: var(--tag); font-size: .92rem; line-height: 1.3;
+         clip-path: polygon(.55rem 0, 100% 0, 100% 100%, .55rem 100%, 0 50%); max-width: calc(100% - .4rem); }
+  .tag .y { display: block; font-size: .82rem; }
+  .status { font: .85rem var(--sans); color: var(--muted); margin: .5rem 0 0 .4rem; display: flex; gap: .45rem; align-items: center; }
+  .status.failed { color: var(--alert); }
+  .first { max-width: 44rem; }
+  ol.steps { padding-left: 1.3rem; margin: 0 0 1.5rem; color: var(--muted); }
+  ol.steps li { margin: .3rem 0; }
+  fieldset.voice { border: 0; padding: 0; margin: 0 0 1.2rem; }
+  fieldset.voice label { display: block; font-size: .98rem; margin: .25rem 0; }
+  #no-match { display: none; }
+  @media (max-width: 34rem) { .add { grid-template-columns: 1fr; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem .8rem; } .tools .count { margin-left: 0; } }
+{% endblock %}
+{% block content %}
+{% if first %}
+<div class="first">
+  <h1>A memory box, kept at home</h1>
+  <p class="lede">MemoryBox reads photos of the things someone kept (letters, photographs, medals, certificates) and builds a private collection that the family corrects and fills in. Nothing leaves this computer.</p>
+  <ol class="steps">
+    <li>Say whose keepsakes these are.</li>
+    <li>Photograph each one on its own, on a plain surface, in good light.</li>
+    <li>Open each card and tell it what you know. It will never invent a memory: guesses are always marked.</li>
+  </ol>
+  <div class="card">{% include "_about_form.html" %}</div>
+</div>
+{% else %}
+  <h1>{{ owner }}'s box</h1>
+  <p class="lede">{% if items %}Open a keepsake to see what it found, and tell it what you know.{% else %}Photograph each keepsake on its own, on a plain surface, in good light. For a letter or the back of a photo, add the other side from the keepsake's page.{% endif %}</p>
+
+  <form class="add" method="post" action="/items" enctype="multipart/form-data" id="add-form">
+    <label class="drop" id="drop">
+      <strong>Add photos of keepsakes</strong>
+      <span class="hint">Choose one or many, or drop them here. They are read one at a time on this computer.</span>
+      <input type="file" name="photos" accept="image/*" multiple id="photos">
+    </label>
+    <button class="btn" type="submit" id="add-button">Add to the box</button>
+  </form>
+  {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+  {% if working %}{% with done = items|length - working, total = items|length, eta = eta %}{% include "_box_progress.html" %}{% endwith %}{% endif %}
+
+  {% if items %}
+  <div class="tools">
+    <label class="sr" for="find">Find a keepsake</label>
+    <input type="search" id="find" placeholder="Find: a name, a place, a year, &ldquo;letter&rdquo;…" autocomplete="off">
+    <label class="sr" for="sort">Order</label>
+    <select id="sort">
+      <option value="added">Newest added first</option>
+      <option value="old">Oldest first</option>
+      <option value="new">Most recent first</option>
+    </select>
+    <span class="count" id="count">{{ items|length }} keepsake{{ '' if items|length == 1 else 's' }}</span>
+  </div>
+  <ul class="grid" id="grid">
+    {% for item in items %}
+    {% set title = item.fields.title.value if item.fields.title else None %}
+    <li data-search="{{ search_text(item) }}" data-year="{{ year_of(item) or '' }}" data-id="{{ item.id }}">
+      <a class="tile {{ 'working' if item.status in WORKING else '' }}" href="/items/{{ item.id }}">
+        <div class="ph"><img src="/photos/{{ item.id }}.jpg" alt="{{ title or 'A keepsake, not read yet' }}" loading="lazy"></div>
+        {% if item.sides %}<span class="sides">{{ item.sides|length + 1 }} photos</span>{% endif %}
+        {% if item.status in WORKING %}
+          <p class="status"><span class="spin" aria-hidden="true"></span>{{ STATUS_TEXT[item.status] }}…</p>
+        {% elif item.status == 'failed' %}
+          <p class="status failed">Could not read this one</p>
+        {% else %}
+          {% set d = item.fields.date %}
+          <span class="tag">{{ title }}{% if d %}<span class="y v-{{ d.source }}">{{ d.value }}{% if d.source == 'guess' %}?{% endif %}</span>{% endif %}</span>
+        {% endif %}
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  <p class="hint" id="no-match">Nothing matches that. Try a year, a place or a name.</p>
+  {% else %}
+  <p class="hint">Nothing in the box yet. An old letter or a photograph is a good place to start.</p>
+  {% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set page = 'about' %}
+{% block style %}
+  fieldset.voice { border: 0; padding: 0; margin: 0 0 1.2rem; }
+  fieldset.voice label { display: block; font-size: .98rem; margin: .25rem 0; }
+{% endblock %}
+{% block content %}
+<div style="max-width: 40rem">
+  <h1>{% if owner %}About {{ owner }}{% else %}Whose box is this?{% endif %}</h1>
+  <p class="lede">This is given to the model with every keepsake, so it can make better guesses and write to, or about, the right person.</p>
+  <div class="card">{% include "_about_form.html" %}</div>
+  {% if count %}
+  <div class="card" style="margin-top:1.5rem">
+    <h2>Take a copy</h2>
+    <p class="hint" style="margin-top:0">One zip with every photo, everything it knows, and a memory book that opens in any browser without this app or the internet. Put it on a USB stick, or send it to the family.</p>
+    <a class="btn quiet" href="/export">Download the whole box</a>
+  </div>
+  {% endif %}
+  {% if owner or count %}
+  <div class="card" style="margin-top:1.5rem">
+    <h2>Start a new box</h2>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <p class="hint" style="margin-top:0">For someone else's keepsakes, or to start again after testing. This box{% if count %} ({{ count }} keepsake{{ '' if count == 1 else 's' }}){% endif %} is not deleted: it is moved, with its photos and everything it knows, to <code>{{ archive }}</code>.</p>
+    <form method="post" action="/about/new-box" data-confirm="Put {% if owner %}{{ owner }}'s box{% else %}this box{% endif %} away in the archive folder and start an empty one?">
+      <button class="btn quiet" type="submit">Put this box away and start a new one</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set page = 'notes' %}
+{% block title %}What it knows · {{ super() }}{% endblock %}
+{% block style %}
+  .notes { max-width: 46rem; }
+  ul.facts { list-style: none; padding: 0; margin: 1rem 0 2rem; }
+  ul.facts li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: start; padding: .7rem 0; border-bottom: 1px solid var(--board-deep); }
+  ul.facts .by { display: block; font: .82rem var(--sans); color: var(--muted); margin-top: .15rem; }
+  ul.facts button { font: 600 .82rem var(--sans); background: none; border: 0; color: var(--alert); cursor: pointer; padding: .3rem; }
+  .add-note { display: grid; grid-template-columns: minmax(0, 1fr) 10rem auto; gap: .6rem; align-items: end; }
+  @media (max-width: 40rem) { .add-note { grid-template-columns: 1fr; } }
+{% endblock %}
+{% block content %}
+<div class="notes">
+  <h1>What it knows</h1>
+  <p class="lede">Every keepsake is read against these notes, so what one person remembers helps with the next photo. They are kept in one file on this computer and nowhere else. Remove anything that is wrong or that you would rather not keep.</p>
+  {% if profile.about %}<div class="card"><p class="hint" style="margin-top:0">About {{ owner }}, from <a href="/about">the family</a>:</p><p class="v-family" style="margin-bottom:0">{{ profile.about }}</p></div>{% endif %}
+  {% if facts %}
+  <ul class="facts">
+    {% for fact in facts %}
+    <li>
+      <div><span class="v-family">{{ fact.text }}</span>
+        <span class="by">{{ fact.by }}, {{ fact.at[:10] }}{% if fact.item_id and items.get(fact.item_id) %}, about <a href="/items/{{ fact.item_id }}">{{ items[fact.item_id].fields.title.value if items[fact.item_id].fields.title else 'a keepsake' }}</a>{% endif %}</span></div>
+      <form method="post" action="/notes/{{ fact.id }}/delete"><button type="submit" aria-label="Remove: {{ fact.text }}">Remove</button></form>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">Nothing yet. Notes appear here when someone corrects a keepsake, or you can add one below.</p>
+  {% endif %}
+  <h2>Add something worth remembering</h2>
+  <form class="add-note" method="post" action="/notes">
+    <div><label class="field" for="note">A memory, in one sentence</label><input type="text" id="note" name="text" required placeholder="Seeya and Aththamma married in Matara in 1966."></div>
+    <div><label class="field" for="note-by">Your name</label><input type="text" id="note-by" name="by" value="{{ me }}"></div>
+    <button class="btn" type="submit">Add note</button>
+  </form>
+</div>
+{% endblock %}

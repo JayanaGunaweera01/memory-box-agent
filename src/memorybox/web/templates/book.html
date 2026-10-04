@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% set page = 'book' %}
+{% block title %}{% if owner %}{{ owner }}: a memory book{% else %}The memory book{% endif %}{% endblock %}
+{% macro src(it, n=1) %}{% if export %}photos/{{ it.id }}{% if n > 1 %}-{{ n }}{% endif %}.jpg{% else %}/photos/{{ it.id }}/{{ n }}.jpg{% endif %}{% endmacro %}
+{% block style %}
+  .book { max-width: 46rem; }
+  .cover { display: none; }
+  .book h2.year { font-size: 1.05rem; color: var(--muted); font-weight: 600; margin: 2.5rem 0 .8rem; padding-bottom: .3rem; border-bottom: 1px solid var(--board-deep); break-after: avoid; }
+  .entry { display: grid; grid-template-columns: 11rem minmax(0, 1fr); gap: 1.25rem; margin: 0 0 1.75rem; break-inside: avoid; }
+  .entry .pics img { width: 100%; background: var(--card); padding: .4rem; box-shadow: 0 6px 14px -9px rgba(30,42,51,.5); display: block; }
+  .entry .pics img + img { width: 48%; margin-top: .4rem; display: inline-block; }
+  .entry h3 { margin: 0 0 .2rem; font-size: 1.15rem; }
+  .entry h3 a { color: inherit; text-decoration: none; }
+  .entry .meta { font-size: .95rem; margin: 0 0 .4rem; display: flex; flex-wrap: wrap; gap: .1rem 1rem; }
+  .entry p.text { margin: 0; }
+  .entry .writing { font-family: var(--type); font-size: .9rem; color: var(--muted); margin: .5rem 0 0; overflow-wrap: anywhere; }
+  .tools { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .colophon { margin-top: 3rem; font: .85rem var(--sans); color: var(--muted); }
+  @media (max-width: 34rem) { .entry { grid-template-columns: 1fr; } .entry .pics { max-width: 14rem; } }
+  @media print {
+    body { font-size: 12pt; } main { padding: 0; max-width: none; }
+    .cover { display: flex; flex-direction: column; justify-content: center; min-height: 92vh; break-after: page; text-align: left; }
+    .cover h1 { font-size: 34pt; } .cover p { font-size: 13pt; color: #444; }
+    .book > h1, .book > .lede { display: none; }
+    .entry .pics img { box-shadow: none; border: 1px solid #ccc; }
+    .v-guess { text-decoration: none; }
+    a { color: inherit; text-decoration: none; }
+  }
+  {% if export %}.cover { display: flex; flex-direction: column; min-height: 40vh; justify-content: center; } .book > h1 { display: none; }{% endif %}
+{% endblock %}
+{% block content %}
+{% set dated = [] %}{% for it in items %}{% if year_of(it) %}{% set _ = dated.append(year_of(it)) %}{% endif %}{% endfor %}
+<div class="book">
+  <section class="cover" aria-hidden="{{ 'false' if export else 'true' }}">
+    <h1>{% if owner %}{{ owner }}{% else %}A memory book{% endif %}</h1>
+    <p>{{ items|length }} keepsake{{ '' if items|length == 1 else 's' }}{% if dated %}, {{ dated|min }} to {{ dated|max }}{% endif %}.<br>
+       What the family remembered is in blue. Anything still a guess has a question mark.</p>
+  </section>
+  <h1>{% if owner %}{{ owner }}: a memory book{% else %}The memory book{% endif %}</h1>
+  <p class="lede">Every keepsake in order, oldest first. What the family told it is in blue; anything still a guess has a question mark.</p>
+  {% if items %}
+  {% if not export %}
+  <div class="tools no-print">
+    <button type="button" class="btn quiet speak" data-speak="#book-text" hidden>Read the whole book aloud</button>
+    <button type="button" class="btn quiet" onclick="window.print()">Print or save as PDF</button>
+    <a class="btn quiet" href="/export">Take a copy (zip)</a>
+  </div>
+  {% endif %}
+  <div id="book-text">
+  {% set ns = namespace(last=None) %}
+  {% for item in items %}
+    {% set y = year_of(item) %}
+    {% set heading = (y // 10 * 10) ~ 's' if y else 'Not dated yet' %}
+    {% if heading != ns.last %}<h2 class="year">{{ heading }}</h2>{% set ns.last = heading %}{% endif %}
+    {% set f = item.fields %}
+    <article class="entry">
+      <div class="pics">
+        <img src="{{ src(item) }}" alt="{{ f.kind.value if f.kind else '' }}" loading="lazy">
+        {% for side in item.sides or [] %}<img src="{{ src(item, loop.index + 1) }}" alt="Another side" loading="lazy">{% endfor %}
+      </div>
+      <div>
+        <h3>{% if export %}<span class="v-{{ f.title.source if f.title else '' }}">{% else %}<a href="/items/{{ item.id }}" class="v-{{ f.title.source if f.title else '' }}">{% endif %}{{ f.title.value if f.title else 'A keepsake' }}{% if export %}</span>{% else %}</a>{% endif %}</h3>
+        <p class="meta">
+          {% for name in ['date', 'place', 'people'] %}{% if f[name] %}<span class="v-{{ f[name].source }}">{{ f[name].value }}{% if f[name].source == 'guess' %}?{% endif %}</span>{% endif %}{% endfor %}
+        </p>
+        <p class="text">{{ item.story }}</p>
+        {% if export and item.inscription %}<p class="writing">Written on it: {{ item.inscription }}</p>{% endif %}
+      </div>
+    </article>
+  {% endfor %}
+  </div>
+  {% if export %}<p class="colophon">Made with MemoryBox, on a computer at home. The full record, with who remembered what, is in memories.json.</p>{% endif %}
+  {% else %}
+  <p class="hint">The book fills in as keepsakes are added to <a href="/">the box</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

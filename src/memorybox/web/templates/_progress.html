@@ -1,0 +1,5 @@
+<div class="progress" id="progress" role="status" aria-live="polite"
+     hx-get="/items/{{ item.id }}/status" hx-trigger="every 2s" hx-swap="outerHTML">
+  <span class="spin" aria-hidden="true"></span>
+  <div><strong>{{ p.text }}…</strong><span class="hint">{{ p.detail }}</span></div>
+</div>

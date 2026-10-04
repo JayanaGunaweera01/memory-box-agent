@@ -1,0 +1,7 @@
+<div class="box-progress" id="box-progress" role="status" aria-live="polite"
+     hx-get="/box/status?working={{ working }}" hx-trigger="every 3s" hx-swap="outerHTML">
+  <span class="spin" aria-hidden="true"></span>
+  <div><strong>Reading {{ working }} keepsake{{ '' if working == 1 else 's' }}</strong>
+    <span class="hint">{{ done }} of {{ total }} done, {{ eta }} left. You can keep looking around meanwhile.</span></div>
+  <div class="bar" aria-hidden="true"><span style="width: {{ ((done / total) * 100) | round | int if total else 0 }}%"></span></div>
+</div>
