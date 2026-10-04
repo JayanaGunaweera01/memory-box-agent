@@ -1,0 +1,12 @@
+<form method="post" action="/about" class="about-form">
+  <label class="field" for="owner">Whose keepsakes are these?</label>
+  <input type="text" id="owner" name="owner" value="{{ profile.owner or '' }}" placeholder="What the family calls them: Seeya, Grandma Rose, Appachchi" required>
+  <label class="field" for="about-text">What should it know about them? <span class="hint">(optional, add more any time)</span></label>
+  <textarea id="about-text" name="about" rows="4" placeholder="Born 1941 in Galle. Ran the 400 metres for Richmond College. Worked for the railway for thirty years. Married Aththamma in 1966.">{{ profile.about or '' }}</textarea>
+  <fieldset class="voice">
+    <legend class="field">The stories should be written</legend>
+    <label><input type="radio" name="voice" value="to" {% if profile.voice != 'about' %}checked{% endif %}> to them: "This medal is from your school sports meet"</label>
+    <label><input type="radio" name="voice" value="about" {% if profile.voice == 'about' %}checked{% endif %}> about them: "This medal is from {{ profile.owner or 'Seeya' }}'s school sports meet"</label>
+  </fieldset>
+  <button class="btn" type="submit">Save</button>
+</form>

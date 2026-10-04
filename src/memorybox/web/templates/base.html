@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{% if owner %}{{ owner }}'s box{% else %}MemoryBox{% endif %}{% endblock %}</title>
+{% if not export %}<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">{% endif %}
+<style>
+  /* Clean and bright: a cool light-grey page, white catalogue cards, a manila tag on each keepsake,
+     blue-black typewriter ink for what is written on an object, and a blue ballpoint for what the
+     family said. System fonts only: this runs offline, and nothing should be fetched from a server. */
+  :root {
+    --board: #eef1f4; --board-deep: #dce2e8; --card: #ffffff; --ink: #1b2733; --muted: #56616d;
+    --pen: #1d4e9e; --graphite: #646b73; --bottle: #2f5d50; --bottle-deep: #234a3f; --tag: #f3dc95;
+    --rule: #e5e9ee; --line: #c9d1d9; --alert: #8c2f1f; --ok: #2f5d50;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --type: "Courier Prime", "Courier New", Courier, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--board); color: var(--ink); font: 17px/1.55 var(--serif); }
+  a { color: var(--bottle); }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible,
+  summary:focus-visible, label.drop:focus-within { outline: 3px solid var(--pen); outline-offset: 2px; }
+  header.top { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.5rem; padding: .9rem clamp(1rem, 4vw, 2.5rem);
+               border-bottom: 1px solid var(--board-deep); background: #fff; }
+  .brand { font-size: 1.25rem; font-weight: 600; text-decoration: none; color: var(--ink); margin-right: auto;
+           display: inline-flex; align-items: center; gap: .5rem; }
+  .brand svg { width: 1.4rem; height: 1.4rem; }
+  nav ul { list-style: none; display: flex; gap: .25rem; margin: 0; padding: 0; }
+  nav a { display: block; font: 500 .95rem var(--sans); color: var(--ink); text-decoration: none; padding: .45rem .7rem; border-radius: .3rem; }
+  nav a:hover { background: rgba(30,42,51,.06); }
+  nav a[aria-current="page"] { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  main { padding: 1.5rem clamp(1rem, 4vw, 2.5rem) 4rem; max-width: 76rem; margin: 0 auto; }
+  h1 { font-size: clamp(1.8rem, 4.5vw, 2.6rem); line-height: 1.15; font-weight: 600; margin: .5rem 0 .4rem; letter-spacing: -.01em; }
+  h2 { font-size: 1.3rem; font-weight: 600; margin: 0 0 .6rem; }
+  .lede { color: var(--muted); max-width: 40rem; margin: 0 0 1.5rem; }
+  .btn { font: 600 .95rem var(--sans); border: 0; border-radius: .35rem; padding: .65rem 1.1rem; cursor: pointer;
+         background: var(--bottle); color: #fff; text-decoration: none; display: inline-block; text-align: center; }
+  .btn:hover { background: var(--bottle-deep); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.quiet { background: transparent; color: var(--bottle); box-shadow: inset 0 0 0 1.5px var(--bottle); }
+  .btn.quiet:hover { background: rgba(47,93,80,.08); }
+  .btn.danger { background: transparent; color: var(--alert); box-shadow: inset 0 0 0 1.5px var(--alert); }
+  .btn.small { font-size: .85rem; padding: .4rem .75rem; }
+  input[type=text], input[type=search], textarea, select { width: 100%; font: 1rem/1.5 var(--serif); color: var(--ink); background: #fff;
+         border: 1px solid var(--line); border-radius: .3rem; padding: .55rem .7rem; }
+  input[type=text]:hover, input[type=search]:hover, textarea:hover, select:hover { border-color: #aab4be; }
+  select { width: auto; font-family: var(--sans); font-size: .95rem; }
+  label.field { display: block; font: 600 .85rem var(--sans); color: var(--muted); margin: .9rem 0 .3rem; }
+  .card { background: var(--card); border-radius: 4px; padding: clamp(1rem, 3vw, 1.75rem);
+          box-shadow: 0 1px 2px rgba(27,39,51,.06), 0 8px 24px -14px rgba(27,39,51,.3); }
+  .error { color: var(--alert); font-family: var(--sans); font-size: .95rem; }
+  .hint { color: var(--muted); font: .9rem/1.45 var(--sans); }
+  .flash { display: flex; gap: .6rem; align-items: center; background: var(--card); border-left: 4px solid var(--ok);
+           padding: .7rem 1rem; margin: 0 0 1.25rem; font: .95rem var(--sans); max-width: 40rem;
+           box-shadow: 0 4px 12px -8px rgba(30,42,51,.4); }
+  footer { color: var(--muted); font: .85rem/1.5 var(--sans); padding: 2rem clamp(1rem, 4vw, 2.5rem); max-width: 76rem; margin: 0 auto; }
+  /* The three inks: you can always see where a detail came from. */
+  .v-family { color: var(--pen); font-style: italic; }
+  .v-read { font-family: var(--type); }
+  .v-guess { color: var(--graphite); text-decoration: underline dotted 1.5px; text-underline-offset: 4px; }
+  .src { font: .78rem var(--sans); color: var(--muted); white-space: nowrap; }
+  .src-family { color: var(--pen); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .spin { width: .7rem; height: .7rem; border-radius: 50%; background: var(--bottle); flex: none; animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  @media (max-width: 40rem) {
+    body { font-size: 16px; }
+    header.top { padding-bottom: 0; }
+    nav { width: 100%; margin: 0 -.6rem; }
+    nav ul { gap: 0; justify-content: space-between; }
+    nav a { white-space: nowrap; padding: .75rem .6rem; }
+    nav .long { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+  @media print { header.top, footer, .flash, .no-print { display: none !important; } body { background: #fff; } }
+  {% block style %}{% endblock %}
+</style>
+</head>
+<body>
+{% if not export %}
+<header class="top">
+  <a class="brand" href="/"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="11" width="26" height="17" rx="1.5" fill="#2f5d50"/><path d="M2 7h28v6H2z" fill="#234a3f"/><rect x="12" y="15" width="8" height="5" fill="#ead9a5"/></svg>MemoryBox</a>
+  <nav aria-label="Main"><ul>
+    <li><a href="/" {% if page == 'box' %}aria-current="page"{% endif %}>The box</a></li>
+    <li><a href="/book" {% if page == 'book' %}aria-current="page"{% endif %}>Memory book</a></li>
+    <li><a href="/notes" {% if page == 'notes' %}aria-current="page"{% endif %}>What it knows</a></li>
+    <li><a href="/about" {% if page == 'about' %}aria-current="page"{% endif %}>{% if owner %}About<span class="long"> {{ owner }}</span>{% else %}Whose box?{% endif %}</a></li>
+  </ul></nav>
+</header>
+{% endif %}
+<main>
+  {% if flash %}<p class="flash" role="status"><span class="spin" aria-hidden="true"></span>{{ flash }}</p>{% endif %}
+  {% block content %}{% endblock %}
+</main>
+{% if not export %}
+<footer>
+  Everything here stays on this computer: the photos, the stories and what you tell it. Read by {{ model_name }}.
+  <a href="/export">Take a copy of the whole box</a>.
+</footer>
+<script src="/static/htmx.min.js"></script>
+<script src="/static/app.js"></script>
+{% endif %}
+</body>
+</html>
