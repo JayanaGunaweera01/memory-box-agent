@@ -3,6 +3,8 @@ name = "memorybox"
 version = "0.1.0"
 description = "A private, local memory collection for a box of someone's keepsakes, read by open models."
 readme = "README.md"
+license = "Apache-2.0"
+authors = [{ name = "Jayana Nirmani Gunaweera" }]
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
